@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding Gen — AI Document Generator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle { color: #888; margin-bottom: 32px; font-size: 16px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-row { margin-bottom: 12px; }
+    label { display: block; color: #888; font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+    input, select {
+      width: 100%;
+      padding: 14px 20px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #a855f7; }
+    select { cursor: pointer; }
+    button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 32px;
+    }
+    button:hover { transform: translateY(-2px); opacity: 0.9; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .status {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #333;
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 12px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .doc-output {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    .doc-output h1, .doc-output h2, .doc-output h3 { color: #fff; margin: 24px 0 12px; }
+    .doc-output h1 { font-size: 24px; }
+    .doc-output h2 { font-size: 20px; color: #a855f7; }
+    .doc-output h3 { font-size: 17px; }
+    .doc-output p { color: #bbb; margin-bottom: 12px; }
+    .doc-output ul, .doc-output ol { padding-left: 24px; margin-bottom: 12px; color: #bbb; }
+    .doc-output li { margin-bottom: 6px; }
+    .doc-output strong { color: #fff; }
+    .doc-output code { background: #1a1a2e; padding: 2px 6px; border-radius: 4px; color: #a855f7; }
+    .doc-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .doc-actions button {
+      width: auto;
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #222;
+      border: 1px solid #444;
+      margin-bottom: 0;
+    }
+    .doc-actions button:hover { border-color: #a855f7; }
+    footer {
+      text-align: center;
+      padding: 40px 0;
+      color: #333;
+      font-size: 13px;
+    }
+    footer a { color: #a855f7; text-decoration: none; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Onboarding Gen</h1>
+    <p class="subtitle">Generate complete client onboarding documents with Claude AI</p>
+
+    <div class="form-grid">
+      <div>
+        <label>Company Name</label>
+        <input type="text" id="company" placeholder="e.g. Monday.com">
+      </div>
+      <div>
+        <label>Product Type</label>
+        <input type="text" id="product" placeholder="e.g. project management SaaS">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Tone</label>
+      <select id="tone">
+        <option value="professional">Professional</option>
+        <option value="casual">Casual</option>
+        <option value="enterprise">Enterprise</option>
+      </select>
+    </div>
+
+    <button id="genBtn" onclick="generate()">Generate Onboarding Document</button>
+
+    <div id="output"></div>
+
+    <footer>
+      Built by <a href="https://github.com/Goldxberg">Ariel Goldberg</a> — Python + Claude API + Flask
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('company').addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+    document.getElementById('product').addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+
+    async function generate() {
+      const company = document.getElementById('company').value.trim();
+      const product = document.getElementById('product').value.trim();
+      const tone = document.getElementById('tone').value;
+      if (!company || !product) return;
+
+      const btn = document.getElementById('genBtn');
+      const output = document.getElementById('output');
+      btn.disabled = true;
+      output.innerHTML = '<div class="status"><span class="spinner"></span>Generating onboarding document... (10-15 seconds)</div>';
+
+      try {
+        const resp = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company, product_type: product, tone })
+        });
+        const data = await resp.json();
+        if (data.error) {
+          output.innerHTML = `<div class="status">${data.error}</div>`;
+          return;
+        }
+        const html = markdownToHtml(data.document);
+        output.innerHTML = `
+          <div class="doc-actions">
+            <button onclick="copyDoc()">Copy Markdown</button>
+            <button onclick="downloadDoc('${data.company}')">Download .md</button>
+          </div>
+          <div class="doc-output" id="docContent">${html}</div>`;
+        window._rawMarkdown = data.document;
+      } catch (err) {
+        output.innerHTML = `<div class="status">Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function copyDoc() {
+      navigator.clipboard.writeText(window._rawMarkdown);
+      event.target.textContent = 'Copied!';
+      setTimeout(() => event.target.textContent = 'Copy Markdown', 2000);
+    }
+
+    function downloadDoc(company) {
+      const blob = new Blob([window._rawMarkdown], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = company.toLowerCase().replace(/\s+/g, '-') + '-onboarding.md';
+      a.click();
+    }
+
+    function markdownToHtml(md) {
+      return md
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/^- \[x\] (.+)$/gm, '<li style="list-style:none">&#9745; $1</li>')
+        .replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none">&#9744; $1</li>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>');
+    }
+  </script>
+</body>
+</html>
